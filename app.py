@@ -36,9 +36,15 @@ def convert_to_iso(obj):
 session = Session(engine)
 
 DATES = session.query(Measurement.date)
+
 MAX_DATE = convert_from_iso(max(DATES)[0])
+MAX_DATE_str = convert_to_iso(MAX_DATE)
+
 MIN_DATE = convert_from_iso(min(DATES)[0])
+MIN_DATE_str = convert_to_iso(MIN_DATE)
+
 LAST_12_MONTHS = MAX_DATE - relativedelta(months=12)
+LAST_12_MONTHS_str = convert_to_iso(LAST_12_MONTHS)
 
 STATIONS = session.query(Station.station).distinct().all()
 STATION_LIST = [STATION[0] for STATION in STATIONS]
@@ -73,8 +79,11 @@ def index():
     start_end_endpoint = escape("/api/v1.0/<startdate>/<enddate>")
 
     print("Server received request for 'Index' page...")
+
     return(
+
         f"<h1>Welcome to the Hawaii Weather API!</h1>"
+        f"<h2>Serving up Hawaii Weather Station Data from {MIN_DATE_str} to {MAX_DATE_str}.</h2>"
         f"<h2><u>Available Routes:</u></h2>"
         f"/api/v1.0/precipitation<br/><br/>"
         f"/api/v1.0/stations<br/><br/>"
@@ -92,9 +101,7 @@ def precipitation():
     precip_dict = {}   
     
     session = Session(engine)
-
-    LAST_12_MONTHS_str = convert_to_iso(LAST_12_MONTHS)
-    
+       
     precip = session.query(Measurement.date, Measurement.prcp).filter(Measurement.date >= LAST_12_MONTHS_str).all()
     precip_dict = dict(precip)
        
@@ -116,9 +123,7 @@ def tobs():
 
     session = Session(engine)
     sel = [Measurement.date, Measurement.station, Measurement.tobs]
-
-    LAST_12_MONTHS_str = convert_to_iso(LAST_12_MONTHS)
-
+    
     tobs = session.query(*sel).filter(Measurement.station == MOST_ACTIVE_STATION).filter(Measurement.date >= LAST_12_MONTHS_str).all()
     
     # Serializer function
@@ -149,6 +154,10 @@ def start(start):
 
         start_date_str1 = convert_to_iso(convert_from_iso(start))
         
+        if (start_date_str1 < MIN_DATE_str) or (start_date_str1 > MAX_DATE_str):
+
+            return f"MINIMUM DATE VALUE IS {MIN_DATE_str}<br/><br/>MAXIMUM DATE VALUE IS {MAX_DATE_str}"
+        
     except: 
 
         return f"START DATE PARSING PROBLEM"
@@ -161,8 +170,6 @@ def start(start):
 
     tobs_start = session.query(*sel).filter(Measurement.station == MOST_ACTIVE_STATION).filter(Measurement.date >= start_date_str1).all()
     
-    MAX_DATE_str = convert_to_iso(MAX_DATE)
-
     # Serializer function 
 
     def serialize1(obj):
@@ -191,8 +198,16 @@ def start_end(start, end):
     try:
 
         start_date_str2 = convert_to_iso(convert_from_iso(start))
+
+        if (start_date_str2 < MIN_DATE_str) or (start_date_str2 > MAX_DATE_str):
+
+            return f"MINIMUM DATE VALUE IS {MIN_DATE_str}<br/><br/>MAXIMUM DATE VALUE IS {MAX_DATE_str}"
         
         end_date_str2 = convert_to_iso(convert_from_iso(end))
+
+        if (end_date_str2 > MAX_DATE_str) or (end_date_str2 < MIN_DATE_str):
+
+            return f"MINIMUM DATE VALUE IS {MIN_DATE_str}<br/><br/>MAXIMUM DATE VALUE IS {MAX_DATE_str}"
         
     except: 
 

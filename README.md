@@ -2,6 +2,8 @@
 
 ## William Vann 
 
+## Demonstration of SQLAlchemy in Python.
+
 *Files:*
 
 climate_starter_HW10_WILLIAM_VANN.ipynb
